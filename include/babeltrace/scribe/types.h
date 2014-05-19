@@ -16,7 +16,7 @@
 #include <babeltrace/types.h>
 #include <babeltrace/format.h>
 #include <babeltrace/format-internal.h>
-#include <babeltrace/scribe/client.h>
+#include <scribe-client/client.h>
 
 /*
  * Inherit from both struct bt_stream_pos and struct bt_trace_descriptor.
