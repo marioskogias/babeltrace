@@ -25,7 +25,9 @@ struct scribe_stream_pos {
 	struct bt_stream_pos parent;
 	struct bt_trace_descriptor trace_descriptor;
 	struct scribe_client* client ;		/* Scribe client. NULL if unset. */
-	int depth;
+	const char hostname[NAME_MAX];
+    int port;
+    int depth;
 	int dummy;		/* disable output */
 	int print_names;	/* print field names */
 	int field_nr;

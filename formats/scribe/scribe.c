@@ -3,6 +3,7 @@
  */
 
 #include <babeltrace/ctf-text/types.h>
+#include <babeltrace/scribe/types.h>
 #include <babeltrace/format.h>
 #include <babeltrace/babeltrace-internal.h>
 #include <inttypes.h>
@@ -22,12 +23,34 @@ int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition 
 	return 0;
 }
 
+
+int parse_url(const char * path, struct scribe_stream_pos * scribe_stream)
+{
+	printf("The path from the function is %s\n", path);
+    int ret;
+    ret = sscanf(path, "scribe://%[a-zA-Z.0-9%-]:%d", scribe_stream->hostname, 
+                &scribe_stream->port);
+    if (ret < 2)
+        return -1;
+    return 1;
+}
 static
 struct bt_trace_descriptor *scribe_open_trace(const char *path, int flags,
 		void (*packet_seek)(struct bt_stream_pos *pos, size_t index,
 			int whence), FILE *metadata_fp)
 {
-	struct ctf_text_stream_pos *pos;
+    struct scribe_stream_pos * scribe_pos;
+    int ret;
+    
+	scribe_pos = g_new0(struct scribe_stream_pos, 1);
+    ret = parse_url(path, scribe_pos);
+    if (!ret) {
+		fprintf(stderr, "[error] Error parsing scribe url.\n");
+        return NULL;
+    }
+    printf("The hostname is %s and the port is %d\n", scribe_pos->hostname,
+            scribe_pos->port);
+    struct ctf_text_stream_pos *pos;
 
 	pos = g_new0(struct ctf_text_stream_pos, 1);
 	pos->parent.rw_table = NULL;
