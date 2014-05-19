@@ -50,13 +50,16 @@ struct bt_trace_descriptor *scribe_open_trace(const char *path, int flags,
     }
     printf("The hostname is %s and the port is %d\n", scribe_pos->hostname,
             scribe_pos->port);
-    struct ctf_text_stream_pos *pos;
+	/*
+     * Open connection with scribe server
+     */
+    scribe_pos->client = open_connection(scribe_pos->hostname, scribe_pos->port);
 
-	pos = g_new0(struct ctf_text_stream_pos, 1);
-	pos->parent.rw_table = NULL;
-	pos->parent.event_cb = scribe_write_event;
-	pos->parent.trace = &pos->trace_descriptor;
-	return &pos->trace_descriptor;
+    scribe_pos->parent.rw_table = NULL;
+	scribe_pos->parent.event_cb = scribe_write_event;
+	scribe_pos->parent.trace = &scribe_pos->trace_descriptor;
+	return &scribe_pos->trace_descriptor;
+
 }
 
 static
