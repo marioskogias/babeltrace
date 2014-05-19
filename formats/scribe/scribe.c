@@ -65,9 +65,10 @@ struct bt_trace_descriptor *scribe_open_trace(const char *path, int flags,
 static
 int scribe_close_trace(struct bt_trace_descriptor *td)
 {
-	struct ctf_text_stream_pos *pos =
-		container_of(td, struct ctf_text_stream_pos,
+	struct scribe_stream_pos *pos =
+		container_of(td, struct scribe_stream_pos,
 			trace_descriptor);
+    close_connection(pos->client);
 	free(pos);
 	return 0;
 }
