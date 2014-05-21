@@ -21,6 +21,8 @@
 #define BUF_SIZE  1024
 #define CATEGORY "LTTng"
 
+#define NSEC_PER_SEC 1000000000ULL
+
 static char current_event[BUF_SIZE];
 
 enum field_item {
@@ -137,7 +139,55 @@ int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition 
             pos->log_count -= count;
 	    }
     }
-    scribe_log(pos->client, CATEGORY, current_event);
+    
+	if (opt_delta_field && stream->has_timestamp) {
+		uint64_t delta, delta_sec, delta_nsec;
+
+		set_field_names_print(pos, ITEM_HEADER);
+		if (pos->print_names) {
+			count = snprintf(pos->log_event, pos->log_count, "delta =  ");
+            pos->log_event += count;
+            pos->log_count -= count;
+	    }
+		else {
+			count = snprintf(pos->log_event, pos->log_count, "(");
+            pos->log_event += count;
+            pos->log_count -= count;
+	    }
+		if (pos->last_real_timestamp != -1ULL) {
+			delta = stream->real_timestamp - pos->last_real_timestamp;
+			delta_sec = delta / NSEC_PER_SEC;
+			delta_nsec = delta % NSEC_PER_SEC;
+			count = snprintf(pos->log_event, pos->log_count, 
+                    "+%" PRIu64 ".%09" PRIu64, delta_sec, delta_nsec);
+            pos->log_event += count;
+            pos->log_count -= count;
+		} else {
+			count = snprintf(pos->log_event, pos->log_count, "+?.?????????");
+            pos->log_event += count;
+            pos->log_count -= count;
+		}
+		if (!pos->print_names) {
+			count = snprintf(pos->log_event, pos->log_count, ")");
+            pos->log_event += count;
+            pos->log_count -= count;
+		}
+
+		if (pos->print_names) {
+			count = snprintf(pos->log_event, pos->log_count, ", ");
+            pos->log_event += count;
+            pos->log_count -= count;
+		}
+		else {
+			count = snprintf(pos->log_event, pos->log_count, " ");
+            pos->log_event += count;
+            pos->log_count -= count;
+		}
+		pos->last_real_timestamp = stream->real_timestamp;
+		pos->last_cycles_timestamp = stream->cycles_timestamp;
+	}
+    printf("%s\n", current_event);
+    //scribe_log(pos->client, CATEGORY, current_event);
 	return 0;
 }
 
