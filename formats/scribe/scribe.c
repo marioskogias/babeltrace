@@ -186,9 +186,163 @@ int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition 
 		pos->last_real_timestamp = stream->real_timestamp;
 		pos->last_cycles_timestamp = stream->cycles_timestamp;
 	}
-    printf("%s\n", current_event);
+	if ((opt_trace_field || opt_all_fields) && stream_class->trace->parent.path[0] != '\0') {
+		set_field_names_print(pos, ITEM_HEADER);
+		if (pos->print_names) {
+			count = snprintf(pos->log_event, pos->log_count, "trace = ");
+            pos->log_event += count;
+            pos->log_count -= count;
+		}
+        count = snprintf(pos->log_event, pos->log_count, "%s", 
+                stream_class->trace->parent.path);
+        pos->log_event += count;
+        pos->log_count -= count;
+        if (pos->print_names) {
+            count = snprintf(pos->log_event, pos->log_count, ", ");
+            pos->log_event += count;
+            pos->log_count -= count;
+        }
+		else {
+            count = snprintf(pos->log_event, pos->log_count, " ");
+            pos->log_event += count;
+            pos->log_count -= count;
+        }
+	}
+	if ((opt_trace_hostname_field || opt_all_fields || opt_trace_default_fields)
+			&& stream_class->trace->env.hostname[0] != '\0') {
+		set_field_names_print(pos, ITEM_HEADER);
+		if (pos->print_names) {
+            count = snprintf(pos->log_event, pos->log_count, "trace:hostname = ");
+            pos->log_event += count;
+            pos->log_count -= count;
+		}
+        count = snprintf(pos->log_event, pos->log_count, "%s", 
+                stream_class->trace->env.hostname);
+        pos->log_event += count;
+        pos->log_count -= count;
+		if (pos->print_names) {
+        count = snprintf(pos->log_event, pos->log_count, ", "); 
+        pos->log_event += count;
+        pos->log_count -= count;
+        }
+		dom_print = 1;
+	}
+
+	if ((opt_trace_domain_field || opt_all_fields) && stream_class->trace->env.domain[0] != '\0') {
+		set_field_names_print(pos, ITEM_HEADER);
+        if (pos->print_names) {
+            count = snprintf(pos->log_event, pos->log_count, "trace:domain = "); 
+            pos->log_event += count;
+            pos->log_count -= count;
+        }
+        count = snprintf(pos->log_event, pos->log_count, "%s", 
+                stream_class->trace->env.domain); 
+        pos->log_event += count;
+        pos->log_count -= count;
+        if (pos->print_names) {
+            count = snprintf(pos->log_event, pos->log_count, ", "); 
+            pos->log_event += count;
+            pos->log_count -= count;
+        }
+		dom_print = 1;
+	}
+	if ((opt_trace_procname_field || opt_all_fields || opt_trace_default_fields)
+			&& stream_class->trace->env.procname[0] != '\0') {
+		set_field_names_print(pos, ITEM_HEADER);
+		if (pos->print_names) {
+            count = snprintf(pos->log_event, pos->log_count, "trace:procname = ");
+            pos->log_event += count;
+            pos->log_count -= count;
+		} else if (dom_print) {
+            count = snprintf(pos->log_event, pos->log_count, ":");
+            pos->log_event += count;
+            pos->log_count -= count;
+		}
+        count = snprintf(pos->log_event, pos->log_count, "%s", 
+            stream_class->trace->env.procname);
+        pos->log_event += count;
+        pos->log_count -= count;
+        if (pos->print_names) {
+            count = snprintf(pos->log_event, pos->log_count, ", "); 
+            pos->log_event += count;
+            pos->log_count -= count;
+        }
+        dom_print = 1;
+	}
+	if ((opt_trace_vpid_field || opt_all_fields || opt_trace_default_fields)
+			&& stream_class->trace->env.vpid != -1) {
+		set_field_names_print(pos, ITEM_HEADER);
+		if (pos->print_names) {
+            count = snprintf(pos->log_event, pos->log_count, "trace:vpid"); 
+            pos->log_event += count;
+            pos->log_count -= count;
+		} else if (dom_print) {
+            count = snprintf(pos->log_event, pos->log_count, ":"); 
+            pos->log_event += count;
+            pos->log_count -= count;
+		}
+        count = snprintf(pos->log_event, pos->log_count, "%d", 
+                stream_class->trace->env.vpid); 
+        pos->log_event += count;
+        pos->log_count -= count;
+        if (pos->print_names) {
+            count = snprintf(pos->log_event, pos->log_count, ", "); 
+            pos->log_event += count;
+            pos->log_count -= count;
+        }
+		dom_print = 1;
+	}
+	/* print cpuid field from packet context */
+	if (stream->stream_packet_context) {
+		if (pos->field_nr++ != 0) {
+            count = snprintf(pos->log_event, pos->log_count, ", "); 
+            pos->log_event += count;
+            pos->log_count -= count;
+        }
+		set_field_names_print(pos, ITEM_SCOPE);
+		if (pos->print_names) {
+            count = snprintf(pos->log_event, pos->log_count, 
+                    "stream.packet.context"); 
+            pos->log_event += count;
+            pos->log_count -= count;
+        }
+        field_nr_saved = pos->field_nr;
+		pos->field_nr = 0;
+		set_field_names_print(pos, ITEM_CONTEXT);
+		ret = generic_rw(ppos, &stream->stream_packet_context->p);
+		if (ret)
+			goto error;
+		pos->field_nr = field_nr_saved;
+	} 
+    /* Read and print event payload */
+	if (event->event_fields) {
+		if (pos->field_nr++ != 0) {
+            count = snprintf(pos->log_event, pos->log_count, ","); 
+            pos->log_event += count;
+            pos->log_count -= count;
+        }
+		set_field_names_print(pos, ITEM_SCOPE);
+		if (pos->print_names) {
+            count = snprintf(pos->log_event, pos->log_count, "event.fields"); 
+            pos->log_event += count;
+            pos->log_count -= count;
+        }
+		field_nr_saved = pos->field_nr;
+		pos->field_nr = 0;
+		set_field_names_print(pos, ITEM_PAYLOAD);
+		ret = generic_rw(ppos, &event->event_fields->p);
+		if (ret)
+			goto error;
+		pos->field_nr = field_nr_saved;
+	}
+
+    //Output
+    printf("%s\n", current_event); 
     //scribe_log(pos->client, CATEGORY, current_event);
 	return 0;
+error:
+	fprintf(stderr, "[error] Unexpected end of stream. Either the trace data stream is corrupted or metadata description does not match data layout.\n");
+	return ret;
 }
 
 
