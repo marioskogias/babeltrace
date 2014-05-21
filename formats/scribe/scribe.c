@@ -32,9 +32,54 @@ enum field_item {
 	ITEM_PAYLOAD,
 };
 
+static
+struct bt_trace_descriptor *scribe_open_trace(const char *path, int flags,
+		void (*packet_seek)(struct bt_stream_pos *pos, size_t index,
+			int whence), FILE *metadata_fp);
 
 static
-void set_field_names_print(struct ctf_text_stream_pos *pos, enum field_item item)
+int scribe_write_event(struct bt_stream_pos *ppos, 
+        struct ctf_stream_definition *stream);
+
+static
+int scribe_close_trace(struct bt_trace_descriptor *td);
+    
+static
+struct bt_format scribe_format = {
+	.open_trace = scribe_open_trace,
+	.close_trace = scribe_close_trace,
+};
+
+static
+rw_dispatch write_dispatch_table[] = {
+	[ CTF_TYPE_INTEGER ] = scribe_integer_write,
+	[ CTF_TYPE_FLOAT ] = NULL,
+	[ CTF_TYPE_ENUM ] = NULL,
+	[ CTF_TYPE_STRING ] = NULL,
+	[ CTF_TYPE_STRUCT ] = NULL,
+	[ CTF_TYPE_VARIANT ] = NULL,
+	[ CTF_TYPE_ARRAY ] = NULL,
+	[ CTF_TYPE_SEQUENCE ] = NULL,
+};
+
+    static
+void __attribute__((constructor)) scribe_init(void)
+{
+	int ret;
+
+	scribe_format.name = g_quark_from_static_string("scribe");
+	ret = bt_register_format(&scribe_format);
+	assert(!ret);
+}
+
+static
+void __attribute__((destructor)) scribe_exit(void)
+{
+	bt_unregister_format(&scribe_format);
+}
+    
+static
+void set_field_names_print(struct scribe_stream_pos *pos, enum field_item item)
 {
 	switch (item) {
 	case ITEM_SCOPE:
@@ -66,6 +111,65 @@ void set_field_names_print(struct ctf_text_stream_pos *pos, enum field_item item
 		assert(0);
 	}
 }
+
+int print_field(struct bt_definition *definition)
+{
+	/* Always print all fields */
+    return 1;
+}
+
+int parse_url(const char * path, struct scribe_stream_pos * scribe_stream)
+{
+	printf("The path from the function is %s\n", path);
+    int ret;
+    ret = sscanf(path, "scribe://%[a-zA-Z.0-9%-]:%d", scribe_stream->hostname, 
+                &scribe_stream->port);
+    if (ret < 2)
+        return -1;
+    return 1;
+}
+
+static
+struct bt_trace_descriptor *scribe_open_trace(const char *path, int flags,
+		void (*packet_seek)(struct bt_stream_pos *pos, size_t index,
+			int whence), FILE *metadata_fp)
+{
+    struct scribe_stream_pos * scribe_pos;
+    int ret;
+    
+	scribe_pos = g_new0(struct scribe_stream_pos, 1);
+    ret = parse_url(path, scribe_pos);
+    if (!ret) {
+		fprintf(stderr, "[error] Error parsing scribe url.\n");
+        return NULL;
+    }
+    printf("The hostname is %s and the port is %d\n", scribe_pos->hostname,
+            scribe_pos->port);
+	/*
+     * Open connection with scribe server
+     */
+    scribe_pos->client = open_connection(scribe_pos->hostname, scribe_pos->port);
+
+
+    scribe_pos->parent.rw_table = write_dispatch_table;
+	scribe_pos->parent.event_cb = scribe_write_event;
+	scribe_pos->parent.trace = &scribe_pos->trace_descriptor;
+	return &scribe_pos->trace_descriptor;
+
+}
+
+static
+int scribe_close_trace(struct bt_trace_descriptor *td)
+{
+	struct scribe_stream_pos *pos =
+		container_of(td, struct scribe_stream_pos,
+			trace_descriptor);
+    close_connection(pos->client);
+	free(pos);
+	return 0;
+}
+
+
 static
 int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition *stream)
 {
@@ -343,78 +447,4 @@ int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition 
 error:
 	fprintf(stderr, "[error] Unexpected end of stream. Either the trace data stream is corrupted or metadata description does not match data layout.\n");
 	return ret;
-}
-
-
-int parse_url(const char * path, struct scribe_stream_pos * scribe_stream)
-{
-	printf("The path from the function is %s\n", path);
-    int ret;
-    ret = sscanf(path, "scribe://%[a-zA-Z.0-9%-]:%d", scribe_stream->hostname, 
-                &scribe_stream->port);
-    if (ret < 2)
-        return -1;
-    return 1;
-}
-
-static
-struct bt_trace_descriptor *scribe_open_trace(const char *path, int flags,
-		void (*packet_seek)(struct bt_stream_pos *pos, size_t index,
-			int whence), FILE *metadata_fp)
-{
-    struct scribe_stream_pos * scribe_pos;
-    int ret;
-    
-	scribe_pos = g_new0(struct scribe_stream_pos, 1);
-    ret = parse_url(path, scribe_pos);
-    if (!ret) {
-		fprintf(stderr, "[error] Error parsing scribe url.\n");
-        return NULL;
-    }
-    printf("The hostname is %s and the port is %d\n", scribe_pos->hostname,
-            scribe_pos->port);
-	/*
-     * Open connection with scribe server
-     */
-    scribe_pos->client = open_connection(scribe_pos->hostname, scribe_pos->port);
-
-
-    scribe_pos->parent.rw_table = NULL;
-	scribe_pos->parent.event_cb = scribe_write_event;
-	scribe_pos->parent.trace = &scribe_pos->trace_descriptor;
-	return &scribe_pos->trace_descriptor;
-
-}
-
-static
-int scribe_close_trace(struct bt_trace_descriptor *td)
-{
-	struct scribe_stream_pos *pos =
-		container_of(td, struct scribe_stream_pos,
-			trace_descriptor);
-    close_connection(pos->client);
-	free(pos);
-	return 0;
-}
-
-static
-struct bt_format scribe_format = {
-	.open_trace = scribe_open_trace,
-	.close_trace = scribe_close_trace,
-};
-
-static
-void __attribute__((constructor)) scribe_init(void)
-{
-	int ret;
-
-	scribe_format.name = g_quark_from_static_string("scribe");
-	ret = bt_register_format(&scribe_format);
-	assert(!ret);
-}
-
-static
-void __attribute__((destructor)) scribe_exit(void)
-{
-	bt_unregister_format(&scribe_format);
 }

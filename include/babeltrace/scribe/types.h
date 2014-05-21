@@ -38,5 +38,17 @@ struct scribe_stream_pos {
 	GString *string;	/* Current string */
 };
 
+/*
+ * Write only is supported for now.
+ */
+BT_HIDDEN
+int scribe_integer_write(struct bt_stream_pos *pos, struct bt_definition *definition);
+
+
+/*
+ * Check if the field must be printed.
+ */
+BT_HIDDEN
+int print_field(struct bt_definition *definition);
 
 #endif /* _BABELTRACE_SCRIBE_TYPES_H */
