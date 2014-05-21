@@ -6,6 +6,7 @@
 #include <babeltrace/scribe/types.h>
 #include <babeltrace/format.h>
 #include <babeltrace/babeltrace-internal.h>
+#include <babeltrace/ctf/events-internal.h>
 #include <inttypes.h>
 #include <sys/mman.h>
 #include <errno.h>
@@ -17,9 +18,121 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+#define BUF_SIZE  1024
+#define CATEGORY "LTTng"
+
+static char current_event[BUF_SIZE];
+
+enum field_item {
+	ITEM_SCOPE,
+	ITEM_HEADER,
+	ITEM_CONTEXT,
+	ITEM_PAYLOAD,
+};
+
+
+static
+void set_field_names_print(struct ctf_text_stream_pos *pos, enum field_item item)
+{
+	switch (item) {
+	case ITEM_SCOPE:
+		if (opt_all_field_names || opt_scope_field_names)
+			pos->print_names = 1;
+		else
+			pos->print_names = 0;
+		break;
+	case ITEM_HEADER:
+		if (opt_all_field_names || opt_header_field_names)
+			pos->print_names = 1;
+		else
+			pos->print_names = 0;
+		break;
+	case ITEM_CONTEXT:
+		if (opt_all_field_names || opt_context_field_names)
+			pos->print_names = 1;
+		else
+			pos->print_names = 0;
+		break;
+	case ITEM_PAYLOAD:
+		if (opt_all_field_names || opt_payload_field_names)
+			pos->print_names = 1;
+		else
+			pos->print_names = 0;
+
+		break;
+	default:
+		assert(0);
+	}
+}
 static
 int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition *stream)
 {
+	struct scribe_stream_pos *pos =
+		container_of(ppos, struct scribe_stream_pos, parent);
+	struct ctf_stream_declaration *stream_class = stream->stream_class;
+	int field_nr_saved;
+	struct ctf_event_declaration *event_class;
+	struct ctf_event_definition *event;
+	uint64_t id;
+	int ret;
+	int dom_print = 0;
+    int count;
+
+    pos->log_event = current_event; 
+    pos->log_count = BUF_SIZE;
+	
+    id = stream->event_id;
+
+	if (id >= stream_class->events_by_id->len) {
+		fprintf(stderr, "[error] Event id %" PRIu64 " is outside range.\n", id);
+		return -EINVAL;
+	}
+	event = g_ptr_array_index(stream->events_by_id, id);
+	if (!event) {
+		fprintf(stderr, "[error] Event id %" PRIu64 " is unknown.\n", id);
+		return -EINVAL;
+	}
+	event_class = g_ptr_array_index(stream_class->events_by_id, id);
+	if (!event_class) {
+		fprintf(stderr, "[error] Event class id %" PRIu64 " is unknown.\n", id);
+		return -EINVAL;
+	}
+
+	if (stream->has_timestamp) {
+		set_field_names_print(pos, ITEM_HEADER);
+		if (pos->print_names) {
+			count = snprintf(pos->log_event, pos->log_count, "timestamp = ");
+            pos->log_event += count;
+            pos->log_count -= count;
+        }
+		else {
+			count = snprintf(pos->log_event, pos->log_count, "[");
+            pos->log_event += count;
+            pos->log_count -= count;
+        }
+		if (opt_clock_cycles) {
+            //ctf_print_timestamp(pos->fp, stream, stream->cycles_timestamp);
+		} else {
+			//ctf_print_timestamp(pos->fp, stream, stream->real_timestamp);
+		}
+		if (!pos->print_names) {
+			count = snprintf(pos->log_event, pos->log_count, "]");
+            pos->log_event += count;
+            pos->log_count -= count;
+        }
+		if (pos->print_names) {
+			count = snprintf(pos->log_event, pos->log_count, ", ");
+            pos->log_event += count;
+            pos->log_count -= count;
+        }
+		else {
+			count = snprintf(pos->log_event, pos->log_count, " ");
+            pos->log_event += count;
+            pos->log_count -= count;
+	    }
+    }
+
+    scribe_log(pos->client, CATEGORY, current_event);
 	return 0;
 }
 
@@ -34,6 +147,7 @@ int parse_url(const char * path, struct scribe_stream_pos * scribe_stream)
         return -1;
     return 1;
 }
+
 static
 struct bt_trace_descriptor *scribe_open_trace(const char *path, int flags,
 		void (*packet_seek)(struct bt_stream_pos *pos, size_t index,
@@ -54,6 +168,7 @@ struct bt_trace_descriptor *scribe_open_trace(const char *path, int flags,
      * Open connection with scribe server
      */
     scribe_pos->client = open_connection(scribe_pos->hostname, scribe_pos->port);
+
 
     scribe_pos->parent.rw_table = NULL;
 	scribe_pos->parent.event_cb = scribe_write_event;

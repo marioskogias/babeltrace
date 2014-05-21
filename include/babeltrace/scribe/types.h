@@ -27,6 +27,8 @@ struct scribe_stream_pos {
 	struct scribe_client* client ;		/* Scribe client. NULL if unset. */
 	const char hostname[NAME_MAX];
     int port;
+    char * log_event;
+    int log_count;
     int depth;
 	int dummy;		/* disable output */
 	int print_names;	/* print field names */
