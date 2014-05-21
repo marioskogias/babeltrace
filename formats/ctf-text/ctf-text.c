@@ -281,7 +281,7 @@ int ctf_text_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definitio
 		else
 			fprintf(pos->fp, " ");
 	}
-	if (opt_delta_field && stream->has_timestamp) {
+/*	if (opt_delta_field && stream->has_timestamp) {
 		uint64_t delta, delta_sec, delta_nsec;
 
 		set_field_names_print(pos, ITEM_HEADER);
@@ -440,9 +440,9 @@ int ctf_text_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definitio
 		pos->field_nr++;
 	else
 		fprintf(pos->fp, ":");
-
+*/
 	/* print cpuid field from packet context */
-	if (stream->stream_packet_context) {
+/*	if (stream->stream_packet_context) {
 		if (pos->field_nr++ != 0)
 			fprintf(pos->fp, ",");
 		set_field_names_print(pos, ITEM_SCOPE);
@@ -456,9 +456,9 @@ int ctf_text_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definitio
 			goto error;
 		pos->field_nr = field_nr_saved;
 	}
-
+*/
 	/* Only show the event header in verbose mode */
-	if (babeltrace_verbose && stream->stream_event_header) {
+/*	if (babeltrace_verbose && stream->stream_event_header) {
 		if (pos->field_nr++ != 0)
 			fprintf(pos->fp, ",");
 		set_field_names_print(pos, ITEM_SCOPE);
@@ -472,9 +472,9 @@ int ctf_text_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definitio
 			goto error;
 		pos->field_nr = field_nr_saved;
 	}
-
+*/
 	/* print stream-declared event context */
-	if (stream->stream_event_context) {
+/*	if (stream->stream_event_context) {
 		if (pos->field_nr++ != 0)
 			fprintf(pos->fp, ",");
 		set_field_names_print(pos, ITEM_SCOPE);
@@ -488,9 +488,9 @@ int ctf_text_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definitio
 			goto error;
 		pos->field_nr = field_nr_saved;
 	}
-
+*/
 	/* print event-declared event context */
-	if (event->event_context) {
+/*	if (event->event_context) {
 		if (pos->field_nr++ != 0)
 			fprintf(pos->fp, ",");
 		set_field_names_print(pos, ITEM_SCOPE);
@@ -504,9 +504,9 @@ int ctf_text_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definitio
 			goto error;
 		pos->field_nr = field_nr_saved;
 	}
-
+*/
 	/* Read and print event payload */
-	if (event->event_fields) {
+	/*if (event->event_fields) {
 		if (pos->field_nr++ != 0)
 			fprintf(pos->fp, ",");
 		set_field_names_print(pos, ITEM_SCOPE);
@@ -520,7 +520,7 @@ int ctf_text_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definitio
 			goto error;
 		pos->field_nr = field_nr_saved;
 	}
-	/* newline */
+*/	/* newline */
 	fprintf(pos->fp, "\n");
 	pos->field_nr = 0;
 

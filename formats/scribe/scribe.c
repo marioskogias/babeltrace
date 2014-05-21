@@ -111,9 +111,15 @@ int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition 
             pos->log_count -= count;
         }
 		if (opt_clock_cycles) {
-            //ctf_print_timestamp(pos->fp, stream, stream->cycles_timestamp);
+            count = snprintf(pos->log_event, pos->log_count, "%020" PRIu64, 
+                    stream->cycles_timestamp);
+            pos->log_event += count;
+            pos->log_count -= count;
 		} else {
-			//ctf_print_timestamp(pos->fp, stream, stream->real_timestamp);
+            count = snprintf(pos->log_event, pos->log_count, "%" PRId64, 
+                    stream->real_timestamp);
+            pos->log_event += count;
+            pos->log_count -= count;
 		}
 		if (!pos->print_names) {
 			count = snprintf(pos->log_event, pos->log_count, "]");
@@ -131,7 +137,6 @@ int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition 
             pos->log_count -= count;
 	    }
     }
-
     scribe_log(pos->client, CATEGORY, current_event);
 	return 0;
 }
