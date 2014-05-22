@@ -441,8 +441,8 @@ int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition 
 	}
 
     //Output
-    printf("%s\n", current_event); 
-    //scribe_log(pos->client, CATEGORY, current_event);
+    //printf("%s\n", current_event); 
+    scribe_log(pos->client, CATEGORY, current_event);
 	return 0;
 error:
 	fprintf(stderr, "[error] Unexpected end of stream. Either the trace data stream is corrupted or metadata description does not match data layout.\n");
