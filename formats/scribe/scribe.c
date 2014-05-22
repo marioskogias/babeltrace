@@ -53,13 +53,13 @@ struct bt_format scribe_format = {
 static
 rw_dispatch write_dispatch_table[] = {
 	[ CTF_TYPE_INTEGER ] = scribe_integer_write,
-	[ CTF_TYPE_FLOAT ] = NULL,
-	[ CTF_TYPE_ENUM ] = NULL,
-	[ CTF_TYPE_STRING ] = NULL,
-	[ CTF_TYPE_STRUCT ] = NULL,
-	[ CTF_TYPE_VARIANT ] = NULL,
-	[ CTF_TYPE_ARRAY ] = NULL,
-	[ CTF_TYPE_SEQUENCE ] = NULL,
+	[ CTF_TYPE_FLOAT ] = scribe_float_write,
+	[ CTF_TYPE_ENUM ] = scribe_enum_write,
+	[ CTF_TYPE_STRING ] = scribe_string_write,
+	[ CTF_TYPE_STRUCT ] = scribe_struct_write,
+	[ CTF_TYPE_VARIANT ] = scribe_variant_write,
+	[ CTF_TYPE_ARRAY ] = scribe_array_write,
+	[ CTF_TYPE_SEQUENCE ] = scribe_sequence_write,
 };
 
     static

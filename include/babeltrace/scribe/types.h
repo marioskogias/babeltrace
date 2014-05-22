@@ -44,7 +44,26 @@ struct scribe_stream_pos {
 BT_HIDDEN
 int scribe_integer_write(struct bt_stream_pos *pos, struct bt_definition *definition);
 
+BT_HIDDEN
+int scribe_float_write(struct bt_stream_pos *pos, struct bt_definition *definition);
 
+BT_HIDDEN
+int scribe_enum_write(struct bt_stream_pos *pos, struct bt_definition *definition);
+
+BT_HIDDEN
+int scribe_string_write(struct bt_stream_pos *pos, struct bt_definition *definition);
+
+BT_HIDDEN
+int scribe_struct_write(struct bt_stream_pos *pos, struct bt_definition *definition);
+
+BT_HIDDEN
+int scribe_variant_write(struct bt_stream_pos *pos, struct bt_definition *definition);
+
+BT_HIDDEN
+int scribe_array_write(struct bt_stream_pos *pos, struct bt_definition *definition);
+
+BT_HIDDEN
+int scribe_sequence_write(struct bt_stream_pos *pos, struct bt_definition *definition);
 /*
  * Check if the field must be printed.
  */
