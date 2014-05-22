@@ -10,9 +10,10 @@ int scribe_integer_write(struct bt_stream_pos *ppos, struct bt_definition *defin
 		container_of(definition, struct definition_integer, p);
 	const struct declaration_integer *integer_declaration =
 		integer_definition->declaration;
-	struct scribe_stream_pos *pos = container_of(pos, struct scribe_stream_pos, 
+	struct scribe_stream_pos *pos = container_of(ppos, struct scribe_stream_pos,
             parent);
     int count;
+
 	if (!print_field(definition))
 		return 0;
 
