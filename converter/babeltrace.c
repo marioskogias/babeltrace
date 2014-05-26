@@ -288,7 +288,6 @@ static int parse_options(int argc, char **argv)
 		switch (opt) {
 		case OPT_OUTPUT_PATH:
 			opt_output_path = (char *) poptGetOptArg(pc);
-			printf("The output path is %s\n", opt_output_path);
             if (!opt_output_path) {
 				ret = -EINVAL;
 				goto end;

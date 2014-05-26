@@ -38,12 +38,12 @@ struct bt_trace_descriptor *scribe_open_trace(const char *path, int flags,
 			int whence), FILE *metadata_fp);
 
 static
-int scribe_write_event(struct bt_stream_pos *ppos, 
+int scribe_write_event(struct bt_stream_pos *ppos,
         struct ctf_stream_definition *stream);
 
 static
 int scribe_close_trace(struct bt_trace_descriptor *td);
-    
+
 static
 struct bt_format scribe_format = {
 	.open_trace = scribe_open_trace,
@@ -77,7 +77,7 @@ void __attribute__((destructor)) scribe_exit(void)
 {
 	bt_unregister_format(&scribe_format);
 }
-    
+
 static
 void set_field_names_print(struct scribe_stream_pos *pos, enum field_item item)
 {
@@ -118,11 +118,11 @@ int print_field(struct bt_definition *definition)
     return 1;
 }
 
-int parse_url(const char * path, struct scribe_stream_pos * scribe_stream)
+int parse_url(const char *path, struct scribe_stream_pos *scribe_stream)
 {
 	printf("The path from the function is %s\n", path);
     int ret;
-    ret = sscanf(path, "scribe://%[a-zA-Z.0-9%-]:%d", scribe_stream->hostname, 
+    ret = sscanf(path, "scribe://%[a-zA-Z.0-9%-]:%d", scribe_stream->hostname,
                 &scribe_stream->port);
     if (ret < 2)
         return -1;
@@ -134,9 +134,9 @@ struct bt_trace_descriptor *scribe_open_trace(const char *path, int flags,
 		void (*packet_seek)(struct bt_stream_pos *pos, size_t index,
 			int whence), FILE *metadata_fp)
 {
-    struct scribe_stream_pos * scribe_pos;
+    struct scribe_stream_pos *scribe_pos;
     int ret;
-    
+
 	scribe_pos = g_new0(struct scribe_stream_pos, 1);
     ret = parse_url(path, scribe_pos);
     if (!ret) {
@@ -148,7 +148,8 @@ struct bt_trace_descriptor *scribe_open_trace(const char *path, int flags,
 	/*
      * Open connection with scribe server
      */
-    scribe_pos->client = open_connection(scribe_pos->hostname, scribe_pos->port);
+    scribe_pos->client = open_connection(scribe_pos->hostname,
+        scribe_pos->port);
 
 
     scribe_pos->parent.rw_table = write_dispatch_table;
@@ -171,7 +172,8 @@ int scribe_close_trace(struct bt_trace_descriptor *td)
 
 
 static
-int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition *stream)
+int scribe_write_event(struct bt_stream_pos *ppos,
+        struct ctf_stream_definition *stream)
 {
 	struct scribe_stream_pos *pos =
 		container_of(ppos, struct scribe_stream_pos, parent);
@@ -184,9 +186,9 @@ int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition 
 	int dom_print = 0;
     int count;
 
-    pos->log_event = current_event; 
+    pos->log_event = current_event;
     pos->log_count = BUF_SIZE;
-	
+
     id = stream->event_id;
 
 	if (id >= stream_class->events_by_id->len) {
@@ -210,19 +212,18 @@ int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition 
 			count = snprintf(pos->log_event, pos->log_count, "timestamp = ");
             pos->log_event += count;
             pos->log_count -= count;
-        }
-		else {
+        } else {
 			count = snprintf(pos->log_event, pos->log_count, "[");
             pos->log_event += count;
             pos->log_count -= count;
         }
 		if (opt_clock_cycles) {
-            count = snprintf(pos->log_event, pos->log_count, "%020" PRIu64, 
+            count = snprintf(pos->log_event, pos->log_count, "%020" PRIu64,
                     stream->cycles_timestamp);
             pos->log_event += count;
             pos->log_count -= count;
 		} else {
-            count = snprintf(pos->log_event, pos->log_count, "%" PRId64, 
+            count = snprintf(pos->log_event, pos->log_count, "%" PRId64,
                     stream->real_timestamp);
             pos->log_event += count;
             pos->log_count -= count;
@@ -236,14 +237,13 @@ int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition 
 			count = snprintf(pos->log_event, pos->log_count, ", ");
             pos->log_event += count;
             pos->log_count -= count;
-        }
-		else {
+        } else {
 			count = snprintf(pos->log_event, pos->log_count, " ");
             pos->log_event += count;
             pos->log_count -= count;
 	    }
     }
-    
+
 	if (opt_delta_field && stream->has_timestamp) {
 		uint64_t delta, delta_sec, delta_nsec;
 
@@ -252,8 +252,7 @@ int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition 
 			count = snprintf(pos->log_event, pos->log_count, "delta =  ");
             pos->log_event += count;
             pos->log_count -= count;
-	    }
-		else {
+	    } else {
 			count = snprintf(pos->log_event, pos->log_count, "(");
             pos->log_event += count;
             pos->log_count -= count;
@@ -262,7 +261,7 @@ int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition 
 			delta = stream->real_timestamp - pos->last_real_timestamp;
 			delta_sec = delta / NSEC_PER_SEC;
 			delta_nsec = delta % NSEC_PER_SEC;
-			count = snprintf(pos->log_event, pos->log_count, 
+			count = snprintf(pos->log_event, pos->log_count,
                     "+%" PRIu64 ".%09" PRIu64, delta_sec, delta_nsec);
             pos->log_event += count;
             pos->log_count -= count;
@@ -290,14 +289,15 @@ int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition 
 		pos->last_real_timestamp = stream->real_timestamp;
 		pos->last_cycles_timestamp = stream->cycles_timestamp;
 	}
-	if ((opt_trace_field || opt_all_fields) && stream_class->trace->parent.path[0] != '\0') {
+	if ((opt_trace_field || opt_all_fields) &&
+            stream_class->trace->parent.path[0] != '\0') {
 		set_field_names_print(pos, ITEM_HEADER);
 		if (pos->print_names) {
 			count = snprintf(pos->log_event, pos->log_count, "trace = ");
             pos->log_event += count;
             pos->log_count -= count;
 		}
-        count = snprintf(pos->log_event, pos->log_count, "%s", 
+        count = snprintf(pos->log_event, pos->log_count, "%s",
                 stream_class->trace->parent.path);
         pos->log_event += count;
         pos->log_count -= count;
@@ -305,8 +305,7 @@ int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition 
             count = snprintf(pos->log_event, pos->log_count, ", ");
             pos->log_event += count;
             pos->log_count -= count;
-        }
-		else {
+        } else {
             count = snprintf(pos->log_event, pos->log_count, " ");
             pos->log_event += count;
             pos->log_count -= count;
@@ -316,35 +315,38 @@ int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition 
 			&& stream_class->trace->env.hostname[0] != '\0') {
 		set_field_names_print(pos, ITEM_HEADER);
 		if (pos->print_names) {
-            count = snprintf(pos->log_event, pos->log_count, "trace:hostname = ");
+            count = snprintf(pos->log_event, pos->log_count,
+                    "trace:hostname = ");
             pos->log_event += count;
             pos->log_count -= count;
 		}
-        count = snprintf(pos->log_event, pos->log_count, "%s", 
+        count = snprintf(pos->log_event, pos->log_count, "%s",
                 stream_class->trace->env.hostname);
         pos->log_event += count;
         pos->log_count -= count;
 		if (pos->print_names) {
-        count = snprintf(pos->log_event, pos->log_count, ", "); 
+        count = snprintf(pos->log_event, pos->log_count, ", ");
         pos->log_event += count;
         pos->log_count -= count;
         }
 		dom_print = 1;
 	}
 
-	if ((opt_trace_domain_field || opt_all_fields) && stream_class->trace->env.domain[0] != '\0') {
+	if ((opt_trace_domain_field || opt_all_fields) &&
+            stream_class->trace->env.domain[0] != '\0') {
 		set_field_names_print(pos, ITEM_HEADER);
         if (pos->print_names) {
-            count = snprintf(pos->log_event, pos->log_count, "trace:domain = "); 
+            count = snprintf(pos->log_event, pos->log_count,
+                    "trace:domain = ");
             pos->log_event += count;
             pos->log_count -= count;
         }
-        count = snprintf(pos->log_event, pos->log_count, "%s", 
-                stream_class->trace->env.domain); 
+        count = snprintf(pos->log_event, pos->log_count, "%s",
+                stream_class->trace->env.domain);
         pos->log_event += count;
         pos->log_count -= count;
         if (pos->print_names) {
-            count = snprintf(pos->log_event, pos->log_count, ", "); 
+            count = snprintf(pos->log_event, pos->log_count, ", ");
             pos->log_event += count;
             pos->log_count -= count;
         }
@@ -354,7 +356,8 @@ int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition 
 			&& stream_class->trace->env.procname[0] != '\0') {
 		set_field_names_print(pos, ITEM_HEADER);
 		if (pos->print_names) {
-            count = snprintf(pos->log_event, pos->log_count, "trace:procname = ");
+            count = snprintf(pos->log_event, pos->log_count,
+                    "trace:procname = ");
             pos->log_event += count;
             pos->log_count -= count;
 		} else if (dom_print) {
@@ -362,12 +365,12 @@ int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition 
             pos->log_event += count;
             pos->log_count -= count;
 		}
-        count = snprintf(pos->log_event, pos->log_count, "%s", 
+        count = snprintf(pos->log_event, pos->log_count, "%s",
             stream_class->trace->env.procname);
         pos->log_event += count;
         pos->log_count -= count;
         if (pos->print_names) {
-            count = snprintf(pos->log_event, pos->log_count, ", "); 
+            count = snprintf(pos->log_event, pos->log_count, ", ");
             pos->log_event += count;
             pos->log_count -= count;
         }
@@ -377,20 +380,20 @@ int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition 
 			&& stream_class->trace->env.vpid != -1) {
 		set_field_names_print(pos, ITEM_HEADER);
 		if (pos->print_names) {
-            count = snprintf(pos->log_event, pos->log_count, "trace:vpid"); 
+            count = snprintf(pos->log_event, pos->log_count, "trace:vpid");
             pos->log_event += count;
             pos->log_count -= count;
 		} else if (dom_print) {
-            count = snprintf(pos->log_event, pos->log_count, ":"); 
+            count = snprintf(pos->log_event, pos->log_count, ":");
             pos->log_event += count;
             pos->log_count -= count;
 		}
-        count = snprintf(pos->log_event, pos->log_count, "%d", 
-                stream_class->trace->env.vpid); 
+        count = snprintf(pos->log_event, pos->log_count, "%d",
+                stream_class->trace->env.vpid);
         pos->log_event += count;
         pos->log_count -= count;
         if (pos->print_names) {
-            count = snprintf(pos->log_event, pos->log_count, ", "); 
+            count = snprintf(pos->log_event, pos->log_count, ", ");
             pos->log_event += count;
             pos->log_count -= count;
         }
@@ -399,14 +402,14 @@ int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition 
 	/* print cpuid field from packet context */
 	if (stream->stream_packet_context) {
 		if (pos->field_nr++ != 0) {
-            count = snprintf(pos->log_event, pos->log_count, ", "); 
+            count = snprintf(pos->log_event, pos->log_count, ", ");
             pos->log_event += count;
             pos->log_count -= count;
         }
 		set_field_names_print(pos, ITEM_SCOPE);
 		if (pos->print_names) {
-            count = snprintf(pos->log_event, pos->log_count, 
-                    "stream.packet.context"); 
+            count = snprintf(pos->log_event, pos->log_count,
+                    "stream.packet.context");
             pos->log_event += count;
             pos->log_count -= count;
         }
@@ -417,17 +420,17 @@ int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition 
 		if (ret)
 			goto error;
 		pos->field_nr = field_nr_saved;
-	} 
+	}
     /* Read and print event payload */
 	if (event->event_fields) {
 		if (pos->field_nr++ != 0) {
-            count = snprintf(pos->log_event, pos->log_count, ","); 
+            count = snprintf(pos->log_event, pos->log_count, ",");
             pos->log_event += count;
             pos->log_count -= count;
         }
 		set_field_names_print(pos, ITEM_SCOPE);
 		if (pos->print_names) {
-            count = snprintf(pos->log_event, pos->log_count, "event.fields"); 
+            count = snprintf(pos->log_event, pos->log_count, "event.fields");
             pos->log_event += count;
             pos->log_count -= count;
         }
@@ -441,10 +444,12 @@ int scribe_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definition 
 	}
 
     //Output
-    //printf("%s\n", current_event); 
+    //printf("%s\n", current_event);
     scribe_log(pos->client, CATEGORY, current_event);
 	return 0;
 error:
-	fprintf(stderr, "[error] Unexpected end of stream. Either the trace data stream is corrupted or metadata description does not match data layout.\n");
+	fprintf(stderr, "[error] Unexpected end of stream. Either the trace data \
+            stream is corrupted or metadata description does not match data \
+            layout.\n");
 	return ret;
 }
