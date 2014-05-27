@@ -17,8 +17,33 @@
 #include <babeltrace/format.h>
 #include <babeltrace/format-internal.h>
 #include <scribe-client/client.h>
+#include <babeltrace/scribe/raw-scribe-types.h>
 
 /*
+ * Define type enumeration
+ */
+
+enum scribe_output {
+    TYPE_RAW,
+    TYPE_ZIPKIN
+};
+
+typedef int (*formatter)(struct bt_stream_pos *pos,
+			   struct ctf_stream_definition *stream);
+
+static formatter *type_formatters[2] = {
+    raw_scribe_formatters,
+    NULL
+    //zipkin_formatters
+};
+
+static rw_dispatch *rw_tables[2] = {
+    raw_scribe_rw,
+    NULL
+    //zipkin_rw
+}; 
+/*
+ *
  * Inherit from both struct bt_stream_pos and struct bt_trace_descriptor.
  */
 struct scribe_stream_pos {
@@ -29,6 +54,7 @@ struct scribe_stream_pos {
     int port;
     char *log_event;
     int log_count;
+    formatter *formatters_table;
     int depth;
 	int dummy;		/* disable output */
 	int print_names;	/* print field names */
@@ -38,36 +64,15 @@ struct scribe_stream_pos {
 	GString *string;	/* current string */
 };
 
-/*
- * Write only is supported for now.
- */
-BT_HIDDEN
-int scribe_integer_write(struct bt_stream_pos *pos, struct bt_definition *definition);
 
-BT_HIDDEN
-int scribe_float_write(struct bt_stream_pos *pos, struct bt_definition *definition);
+static
+struct bt_trace_descriptor *scribe_generic_open_trace(const char *path, 
+        int flags, void (*packet_seek)(struct bt_stream_pos *pos, size_t index,
+			int whence), FILE *metadata_fp, enum scribe_output type);
 
-BT_HIDDEN
-int scribe_enum_write(struct bt_stream_pos *pos, struct bt_definition *definition);
-
-BT_HIDDEN
-int scribe_string_write(struct bt_stream_pos *pos, struct bt_definition *definition);
-
-BT_HIDDEN
-int scribe_struct_write(struct bt_stream_pos *pos, struct bt_definition *definition);
-
-BT_HIDDEN
-int scribe_variant_write(struct bt_stream_pos *pos, struct bt_definition *definition);
-
-BT_HIDDEN
-int scribe_array_write(struct bt_stream_pos *pos, struct bt_definition *definition);
-
-BT_HIDDEN
-int scribe_sequence_write(struct bt_stream_pos *pos, struct bt_definition *definition);
-/*
- * Check if the field must be printed.
- */
-BT_HIDDEN
-int print_field(struct bt_definition *definition);
+static
+struct bt_trace_descriptor *scribe_generic_close_trace(const char *path, 
+        int flags, void (*packet_seek)(struct bt_stream_pos *pos, size_t index,
+			int whence), FILE *metadata_fp);
 
 #endif /* _BABELTRACE_SCRIBE_TYPES_H */

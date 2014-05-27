@@ -37,6 +37,7 @@ noinst_HEADERS = \
 	babeltrace/ctf/metadata.h \
 	babeltrace/ctf-text/types.h \
 	babeltrace/scribe/types.h \
+	babeltrace/scribe/raw-scribe-types.h \
 	babeltrace/ctf/types.h \
 	babeltrace/ctf/callbacks-internal.h \
 	babeltrace/ctf/ctf-index.h \

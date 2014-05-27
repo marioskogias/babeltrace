@@ -1,8 +1,8 @@
 AM_CFLAGS = $(PACKAGE_CFLAGS) -I$(top_srcdir)/include
 
-noinst_LTLIBRARIES = libscribe-types.la
+noinst_LTLIBRARIES = libraw-scribe-types.la
 
-libscribe_types_la_SOURCES = \
+libraw_scribe_types_la_SOURCES = \
 	integer.c \
     float.c \
 	enum.c \
@@ -12,5 +12,5 @@ libscribe_types_la_SOURCES = \
 	array.c \
 	sequence.c
  
-libscribe_types_la_LIBADD = \
+libraw_scribe_types_la_LIBADD = \
 	$(top_builddir)/lib/libbabeltrace.la

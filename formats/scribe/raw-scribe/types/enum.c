@@ -3,11 +3,12 @@
  *
  */
 
-#include <babeltrace/scribe/types.h>
+#include <babeltrace/scribe/raw-scribe-types.h>
 #include <stdio.h>
 #include <stdint.h>
 
-int scribe_enum_write(struct bt_stream_pos *ppos, struct bt_definition *definition)
+int scribe_raw_enum_write(struct bt_stream_pos *ppos, 
+        struct bt_definition *definition)
 {
 	struct definition_enum *enum_definition =
 		container_of(definition, struct definition_enum, p);

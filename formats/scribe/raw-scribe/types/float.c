@@ -5,10 +5,11 @@
  *
  */
 
-#include <babeltrace/scribe/types.h>
+#include <babeltrace/scribe/raw-scribe-types.h>
 #include <stdio.h>
 
-int scribe_float_write(struct bt_stream_pos *ppos, struct bt_definition *definition)
+int scribe_raw_float_write(struct bt_stream_pos *ppos, 
+        struct bt_definition *definition)
 {
 	struct definition_float *float_definition =
 		container_of(definition, struct definition_float, p);

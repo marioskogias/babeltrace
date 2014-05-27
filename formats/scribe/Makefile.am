@@ -1,6 +1,6 @@
 AM_CFLAGS = $(PACKAGE_CFLAGS) -I$(top_srcdir)/include
 
-SUBDIRS = types .
+SUBDIRS = raw-scribe .
 
 lib_LTLIBRARIES = libbabeltrace-scribe.la
 
@@ -9,7 +9,7 @@ libbabeltrace_scribe_la_SOURCES = \
 
 libbabeltrace_scribe_la_LDFLAGS = \
 	-Wl,--no-as-needed -version-info $(BABELTRACE_LIBRARY_VERSION) \
-	-lscribe_client types/libscribe-types.la
+	-lscribe_client raw-scribe/libbabeltrace-raw-scribe.la
 
 libbabeltrace_scribe_la_LIBADD = \
 	$(top_builddir)/lib/libbabeltrace.la

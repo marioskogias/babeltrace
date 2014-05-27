@@ -1,10 +1,10 @@
-#include <babeltrace/scribe/types.h>
+#include <babeltrace/scribe/raw-scribe-types.h>
 #include <stdio.h>
 #include <inttypes.h>
 #include <stdint.h>
 #include <babeltrace/bitfield.h>
 
-int scribe_integer_write(struct bt_stream_pos *ppos, struct bt_definition *definition)
+int scribe_raw_integer_write(struct bt_stream_pos *ppos, struct bt_definition *definition)
 {
 	struct definition_integer *integer_definition =
 		container_of(definition, struct definition_integer, p);

@@ -3,12 +3,12 @@
  *
  */
 
-#include <babeltrace/scribe/types.h>
+#include <babeltrace/scribe/raw-scribe-types.h>
 #include <stdio.h>
 #include <limits.h>		/* C99 limits */
 #include <string.h>
 
-int scribe_string_write(struct bt_stream_pos *ppos,
+int scribe_raw_string_write(struct bt_stream_pos *ppos,
 			  struct bt_definition *definition)
 {
 	struct definition_string *string_definition =

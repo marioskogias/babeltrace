@@ -173,7 +173,8 @@ AC_CONFIG_FILES([
 	formats/ctf-metadata/Makefile
 	formats/bt-dummy/Makefile
 	formats/scribe/Makefile
-	formats/scribe/types/Makefile
+	formats/scribe/raw-scribe/Makefile
+	formats/scribe/raw-scribe/types/Makefile
 	formats/lttng-live/Makefile
 	formats/ctf/metadata/Makefile
 	formats/ctf/writer/Makefile
