@@ -3,7 +3,7 @@
  *
  */
 
-#include <babeltrace/scribe/raw-scribe-types.h>
+#include <babeltrace/scribe/types.h>
 #include <stdio.h>
 #include <limits.h>		/* C99 limits */
 #include <string.h>

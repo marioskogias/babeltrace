@@ -17,19 +17,12 @@
 #include <babeltrace/format.h>
 #include <babeltrace/format-internal.h>
 #include <scribe-client/client.h>
+#include <babeltrace/scribe/scribe-internal.h>
 #include <babeltrace/scribe/raw-scribe-types.h>
 
 /*
  * Define type enumeration
  */
-
-enum scribe_output {
-    TYPE_RAW,
-    TYPE_ZIPKIN
-};
-
-typedef int (*formatter)(struct bt_stream_pos *pos,
-			   struct ctf_stream_definition *stream);
 
 static formatter *type_formatters[2] = {
     raw_scribe_formatters,
@@ -65,14 +58,12 @@ struct scribe_stream_pos {
 };
 
 
-static
+//static
 struct bt_trace_descriptor *scribe_generic_open_trace(const char *path, 
         int flags, void (*packet_seek)(struct bt_stream_pos *pos, size_t index,
 			int whence), FILE *metadata_fp, enum scribe_output type);
 
-static
-struct bt_trace_descriptor *scribe_generic_close_trace(const char *path, 
-        int flags, void (*packet_seek)(struct bt_stream_pos *pos, size_t index,
-			int whence), FILE *metadata_fp);
+//static
+int scribe_generic_close_trace(struct bt_trace_descriptor *td);
 
 #endif /* _BABELTRACE_SCRIBE_TYPES_H */

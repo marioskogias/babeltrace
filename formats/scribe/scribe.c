@@ -2,7 +2,6 @@
  * BabelTrace - Scribe Output
  */
 
-#include <babeltrace/ctf-text/types.h>
 #include <babeltrace/scribe/types.h>
 #include <babeltrace/format.h>
 #include <babeltrace/babeltrace-internal.h>
@@ -29,10 +28,6 @@ static
 int scribe_write_event(struct bt_stream_pos *ppos,
         struct ctf_stream_definition *stream);
 
-static
-int scribe_close_trace(struct bt_trace_descriptor *td);
-
-
 int parse_url(const char *path, struct scribe_stream_pos *scribe_stream)
 {
 	printf("The path from the function is %s\n", path);
@@ -44,7 +39,7 @@ int parse_url(const char *path, struct scribe_stream_pos *scribe_stream)
     return 1;
 }
 
-static
+//static
 struct bt_trace_descriptor *scribe_generic_open_trace(const char *path, 
         int flags, void (*packet_seek)(struct bt_stream_pos *pos, size_t index,
 			int whence), FILE *metadata_fp, enum scribe_output type)
@@ -77,7 +72,7 @@ struct bt_trace_descriptor *scribe_generic_open_trace(const char *path,
 
 }
 
-static
+//static
 int scribe_generic_close_trace(struct bt_trace_descriptor *td)
 {
 	struct scribe_stream_pos *pos =

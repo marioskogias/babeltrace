@@ -3,7 +3,6 @@
  */
 
 #include <babeltrace/scribe/types.h>
-#include <babeltrace/scribe/raw_scribe_types.h>
 #include <babeltrace/format.h>
 #include <babeltrace/babeltrace-internal.h>
 #include <babeltrace/ctf/events-internal.h>
@@ -98,36 +97,24 @@ int print_field(struct bt_definition *definition)
     return 1;
 }
 
-int parse_url(const char *path, struct scribe_stream_pos *scribe_stream)
-{
-	printf("The path from the function is %s\n", path);
-    int ret;
-    ret = sscanf(path, "scribe://%[a-zA-Z.0-9%-]:%d", scribe_stream->hostname,
-                &scribe_stream->port);
-    if (ret < 2)
-        return -1;
-    return 1;
-}
 
 static
 struct bt_trace_descriptor *scribe_open_trace(const char *path, int flags,
 		void (*packet_seek)(struct bt_stream_pos *pos, size_t index,
 			int whence), FILE *metadata_fp)
 {
-    return scribe_generic_open_trace(path, flags, NULL, fp, TYPE_RAW);
+    return scribe_generic_open_trace(path, flags, NULL, metadata_fp, TYPE_RAW);
 }
 
-int raw_format_pre_payload(struct bt_stream_pos *pos, 
+int raw_format_pre_payload(struct bt_stream_pos *ppos, 
         struct ctf_stream_definition *stream)
 {
     struct scribe_stream_pos *pos =
 		container_of(ppos, struct scribe_stream_pos, parent);
 	struct ctf_stream_declaration *stream_class = stream->stream_class;
-	int field_nr_saved;
 	struct ctf_event_declaration *event_class;
 	struct ctf_event_definition *event;
 	uint64_t id;
-	int ret;
 	int dom_print = 0;
     int count;
 
@@ -341,22 +328,23 @@ int raw_format_pre_payload(struct bt_stream_pos *pos,
         }
 		dom_print = 1;
     }
+    return 1;
 }
 
-int raw_format_payload(struct bt_stream_pos *pos, 
+int raw_format_payload(struct bt_stream_pos *ppos, 
         struct ctf_stream_definition *stream)
 {
     struct scribe_stream_pos *pos =
 		container_of(ppos, struct scribe_stream_pos, parent);
-	struct ctf_stream_declaration *stream_class = stream->stream_class;
 	int field_nr_saved;
-	struct ctf_event_declaration *event_class;
 	struct ctf_event_definition *event;
-	uint64_t id;
 	int ret;
-	int dom_print = 0;
     int count;
-	
+    uint64_t id;
+    
+    id = stream->event_id;
+    event = g_ptr_array_index(stream->events_by_id, id);    
+    
     /* print cpuid field from packet context */
 	if (stream->stream_packet_context) {
 		if (pos->field_nr++ != 0) {

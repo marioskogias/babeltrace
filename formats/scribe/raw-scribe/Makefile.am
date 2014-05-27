@@ -8,9 +8,10 @@ libbabeltrace_raw_scribe_la_SOURCES = \
 	raw_scribe.c
 
 libbabeltrace_raw_scribe_la_LDFLAGS = \
-	-Wl,--no-as-needed -version-info $(BABELTRACE_LIBRARY_VERSION) \
-	-lscribe_client types/libraw-scribe-types.la
+	-Wl,--no-as-needed  -version-info $(BABELTRACE_LIBRARY_VERSION) 
 
 libbabeltrace_raw_scribe_la_LIBADD = \
-	$(top_builddir)/lib/libbabeltrace.la
-	$(top_builddir)/formats/ctf/libbabeltrace-ctf.la
+	$(top_builddir)/lib/libbabeltrace.la \
+	$(top_builddir)/formats/ctf/libbabeltrace-ctf.la \
+	$(top_builddir)/formats/scribe/libbabeltrace-scribe.la \
+	$(top_builddir)/formats/scribe/raw-scribe/types/libraw-scribe-types.la
