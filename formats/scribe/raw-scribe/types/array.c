@@ -5,7 +5,7 @@
 #include <babeltrace/scribe/types.h>
 #include <stdio.h>
 
-int scribe_raw_ray_write(struct bt_stream_pos *ppos, 
+int scribe_raw_array_write(struct bt_stream_pos *ppos, 
         struct bt_definition *definition)
 {
 	struct scribe_stream_pos *pos = container_of(ppos, struct scribe_stream_pos,
