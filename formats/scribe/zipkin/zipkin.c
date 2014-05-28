@@ -31,6 +31,22 @@ struct bt_format zipkin_format = {
 	.close_trace = scribe_generic_close_trace,
 };
 
+/*
+ * Formatters
+ */
+
+int zipkin_format_pre_payload(struct bt_stream_pos *pos, 
+        struct ctf_stream_definition *stream);
+
+int zipkin_format_payload(struct bt_stream_pos *pos, 
+        struct ctf_stream_definition *stream);
+
+
+static formatter zipkin_formatters[] = {
+    zipkin_format_pre_payload,
+    zipkin_format_payload
+};
+
 static
 void __attribute__((constructor)) zipkin_init(void)
 {
@@ -48,12 +64,23 @@ void __attribute__((destructor)) zipkin_exit(void)
 }
 
 static
-struct bt_trace_descriptor *scribe_open_trace(const char *path, int flags,
+struct bt_trace_descriptor *zipkin_open_trace(const char *path, int flags,
 		void (*packet_seek)(struct bt_stream_pos *pos, size_t index,
 			int whence), FILE *metadata_fp)
 {
-    return scribe_generic_open_trace(path, flags, NULL, metadata_fp, 
-            TYPE_ZIPKIN);
+    struct bt_trace_descriptor *ret;
+    
+    ret = scribe_generic_open_trace(path, flags, NULL, metadata_fp);
+    
+    struct scribe_stream_pos *ppos = container_of(ret, struct scribe_stream_pos,
+            trace_descriptor);
+    
+    /* Set formatters table */
+    ppos->formatters_table = zipkin_formatters;
+    /* Set rw table */
+    ppos->parent.rw_table = NULL;
+    
+    return ret;
 }
 
 int zipkin_format_pre_payload(struct bt_stream_pos *ppos, 

@@ -3,6 +3,7 @@
  */
 
 #include <babeltrace/scribe/types.h>
+#include <babeltrace/scribe/raw-scribe-types.h>
 #include <babeltrace/format.h>
 #include <babeltrace/babeltrace-internal.h>
 #include <babeltrace/ctf/events-internal.h>
@@ -39,6 +40,33 @@ static
 struct bt_format scribe_raw_format = {
 	.open_trace = scribe_open_trace,
 	.close_trace = scribe_generic_close_trace,
+};
+
+static
+rw_dispatch raw_scribe_rw[] = {
+	[ CTF_TYPE_INTEGER ] = scribe_raw_integer_write,
+	[ CTF_TYPE_FLOAT ] = scribe_raw_float_write,
+	[ CTF_TYPE_ENUM ] = scribe_raw_enum_write,
+	[ CTF_TYPE_STRING ] = scribe_raw_string_write,
+	[ CTF_TYPE_STRUCT ] = scribe_raw_struct_write,
+	[ CTF_TYPE_VARIANT ] = scribe_raw_variant_write,
+	[ CTF_TYPE_ARRAY ] = scribe_raw_array_write,
+	[ CTF_TYPE_SEQUENCE ] = scribe_raw_sequence_write,
+};
+
+/*
+ * Formatters
+ */
+
+int raw_format_pre_payload(struct bt_stream_pos *pos, 
+        struct ctf_stream_definition *stream);
+
+int raw_format_payload(struct bt_stream_pos *pos, 
+        struct ctf_stream_definition *stream);
+
+static formatter raw_scribe_formatters[] = {
+    raw_format_pre_payload,
+    raw_format_payload
 };
 
 static
@@ -103,7 +131,18 @@ struct bt_trace_descriptor *scribe_open_trace(const char *path, int flags,
 		void (*packet_seek)(struct bt_stream_pos *pos, size_t index,
 			int whence), FILE *metadata_fp)
 {
-    return scribe_generic_open_trace(path, flags, NULL, metadata_fp, TYPE_RAW);
+    struct bt_trace_descriptor *ret;
+    ret = scribe_generic_open_trace(path, flags, NULL, metadata_fp);
+    
+    struct scribe_stream_pos *ppos = container_of(ret, struct scribe_stream_pos, 
+            trace_descriptor);
+    
+    /* Set formatters table */
+    ppos->formatters_table = raw_scribe_formatters;
+    /* Set rw table */
+    ppos->parent.rw_table = raw_scribe_rw;
+    
+    return ret;
 }
 
 int raw_format_pre_payload(struct bt_stream_pos *ppos, 

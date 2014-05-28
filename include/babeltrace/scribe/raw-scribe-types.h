@@ -11,8 +11,6 @@
 #include <babeltrace/format.h>
 #include <babeltrace/format-internal.h>
 #include <scribe-client/client.h>
-#include <babeltrace/scribe/scribe-internal.h>
-
 
 /*
 * Write only is supported for now.
@@ -54,30 +52,5 @@ int scribe_raw_sequence_write(struct bt_stream_pos *pos,
 BT_HIDDEN
 int print_field(struct bt_definition *definition);
 
-static
-rw_dispatch raw_scribe_rw[] = {
-	[ CTF_TYPE_INTEGER ] = scribe_raw_integer_write,
-	[ CTF_TYPE_FLOAT ] = scribe_raw_float_write,
-	[ CTF_TYPE_ENUM ] = scribe_raw_enum_write,
-	[ CTF_TYPE_STRING ] = scribe_raw_string_write,
-	[ CTF_TYPE_STRUCT ] = scribe_raw_struct_write,
-	[ CTF_TYPE_VARIANT ] = scribe_raw_variant_write,
-	[ CTF_TYPE_ARRAY ] = scribe_raw_array_write,
-	[ CTF_TYPE_SEQUENCE ] = scribe_raw_sequence_write,
-};
 
-/*
- * Formatters
- */
-
-int raw_format_pre_payload(struct bt_stream_pos *pos, 
-        struct ctf_stream_definition *stream);
-
-int raw_format_payload(struct bt_stream_pos *pos, 
-        struct ctf_stream_definition *stream);
-
-static formatter raw_scribe_formatters[] = {
-    raw_format_pre_payload,
-    raw_format_payload
-};
 #endif /* _BABELTRACE_SCRIBE_RAW_TYPES_H */

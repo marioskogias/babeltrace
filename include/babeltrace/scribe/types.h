@@ -17,20 +17,15 @@
 #include <babeltrace/format.h>
 #include <babeltrace/format-internal.h>
 #include <scribe-client/client.h>
-#include <babeltrace/scribe/scribe-internal.h>
-#include <babeltrace/scribe/raw-scribe-types.h>
-#include <babeltrace/scribe/zipkin-types.h>
 
-
-static formatter *type_formatters[2] = {
-   [TYPE_RAW] raw_scribe_formatters,
-   [TYPE_ZIPKIN] zipkin_formatters
+enum scribe_output {
+    TYPE_RAW,
+    TYPE_ZIPKIN
 };
 
-static rw_dispatch *rw_tables[2] = {
-    raw_scribe_rw,
-    NULL
-}; 
+typedef int (*formatter)(struct bt_stream_pos *pos,
+			   struct ctf_stream_definition *stream);
+
 /*
  *
  * Inherit from both struct bt_stream_pos and struct bt_trace_descriptor.
@@ -57,7 +52,7 @@ struct scribe_stream_pos {
 //static
 struct bt_trace_descriptor *scribe_generic_open_trace(const char *path, 
         int flags, void (*packet_seek)(struct bt_stream_pos *pos, size_t index,
-			int whence), FILE *metadata_fp, enum scribe_output type);
+			int whence), FILE *metadata_fp);
 
 //static
 int scribe_generic_close_trace(struct bt_trace_descriptor *td);

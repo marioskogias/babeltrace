@@ -6,7 +6,7 @@
  */
 
 #include <babeltrace/scribe/types.h>
-
+#include <babeltrace/scribe/raw-scribe-types.h>
 #include <stdio.h>
 
 int scribe_raw_float_write(struct bt_stream_pos *ppos, 

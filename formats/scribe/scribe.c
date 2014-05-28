@@ -42,7 +42,7 @@ int parse_url(const char *path, struct scribe_stream_pos *scribe_stream)
 //static
 struct bt_trace_descriptor *scribe_generic_open_trace(const char *path, 
         int flags, void (*packet_seek)(struct bt_stream_pos *pos, size_t index,
-			int whence), FILE *metadata_fp, enum scribe_output type)
+			int whence), FILE *metadata_fp)
 {
     struct scribe_stream_pos *scribe_pos;
     int ret;
@@ -61,11 +61,6 @@ struct bt_trace_descriptor *scribe_generic_open_trace(const char *path,
     scribe_pos->client = open_connection(scribe_pos->hostname,
         scribe_pos->port);
     
-    /* Set formatters table */
-    scribe_pos->formatters_table = type_formatters[type];
-    /* Set rw table */
-    scribe_pos->parent.rw_table = rw_tables[type];
-	
     scribe_pos->parent.event_cb = scribe_write_event;
 	scribe_pos->parent.trace = &scribe_pos->trace_descriptor;
 	return &scribe_pos->trace_descriptor;
