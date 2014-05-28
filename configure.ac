@@ -175,6 +175,7 @@ AC_CONFIG_FILES([
 	formats/scribe/Makefile
 	formats/scribe/raw-scribe/Makefile
 	formats/scribe/raw-scribe/types/Makefile
+	formats/scribe/zipkin/Makefile
 	formats/lttng-live/Makefile
 	formats/ctf/metadata/Makefile
 	formats/ctf/writer/Makefile

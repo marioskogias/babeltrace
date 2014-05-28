@@ -39,6 +39,7 @@ noinst_HEADERS = \
 	babeltrace/scribe/types.h \
 	babeltrace/scribe/scribe-internal.h \
 	babeltrace/scribe/raw-scribe-types.h \
+	babeltrace/scribe/zipkin-types.h \
 	babeltrace/ctf/types.h \
 	babeltrace/ctf/callbacks-internal.h \
 	babeltrace/ctf/ctf-index.h \

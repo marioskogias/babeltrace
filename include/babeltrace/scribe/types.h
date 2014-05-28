@@ -19,21 +19,17 @@
 #include <scribe-client/client.h>
 #include <babeltrace/scribe/scribe-internal.h>
 #include <babeltrace/scribe/raw-scribe-types.h>
+#include <babeltrace/scribe/zipkin-types.h>
 
-/*
- * Define type enumeration
- */
 
 static formatter *type_formatters[2] = {
-    raw_scribe_formatters,
-    NULL
-    //zipkin_formatters
+   [TYPE_RAW] raw_scribe_formatters,
+   [TYPE_ZIPKIN] zipkin_formatters
 };
 
 static rw_dispatch *rw_tables[2] = {
     raw_scribe_rw,
     NULL
-    //zipkin_rw
 }; 
 /*
  *

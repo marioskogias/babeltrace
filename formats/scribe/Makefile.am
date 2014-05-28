@@ -1,6 +1,6 @@
 AM_CFLAGS = $(PACKAGE_CFLAGS) -I$(top_srcdir)/include
 
-SUBDIRS = . raw-scribe
+SUBDIRS = . raw-scribe zipkin
 
 noinst_LTLIBRARIES = libbabeltrace-scribe.la
 
