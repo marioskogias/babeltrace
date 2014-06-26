@@ -41,6 +41,7 @@
 #include <glib.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define NSEC_PER_SEC 1000000000ULL
 
@@ -116,6 +117,21 @@ static GQuark Q_STREAM_PACKET_CONTEXT_TIMESTAMP_BEGIN,
 	Q_STREAM_PACKET_CONTEXT_EVENTS_DISCARDED,
 	Q_STREAM_PACKET_CONTEXT_CONTENT_SIZE,
 	Q_STREAM_PACKET_CONTEXT_PACKET_SIZE;
+
+/*this is the struct finally written to the file descriptor*/
+struct zipkin_trace {
+    char trace_name[20];
+    char service_name[20];
+    int port;
+    char ip;
+    long trace_id;
+    long span_id;
+    long parent_span_id;
+    int kind; // 0 for timestamp 1 for key-val
+    char key[20];
+    char val[50];
+    uint64_t timestamp;
+};
 
 static
 void __attribute__((constructor)) init_quarks(void)
@@ -244,7 +260,7 @@ int ctf_text_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definitio
 	uint64_t id;
 	int ret;
 	int dom_print = 0;
-
+    struct zipkin_trace ztrace;
 	id = stream->event_id;
 
 	if (id >= stream_class->events_by_id->len) {
@@ -261,267 +277,80 @@ int ctf_text_write_event(struct bt_stream_pos *ppos, struct ctf_stream_definitio
 		fprintf(stderr, "[error] Event class id %" PRIu64 " is unknown.\n", id);
 		return -EINVAL;
 	}
+    
+    /*timestamp*/
+    ztrace.timestamp = stream->real_timestamp;
+    
+    /*now the trace fields*/
+    struct definition_struct *struct_definition =
+		container_of(&event->event_fields->p, struct definition_struct, p);
+    
+    /*trace name*/
+    struct bt_definition *field =
+        g_ptr_array_index(struct_definition->fields, 0);
+	
+    struct definition_string *string_definition =
+		container_of(field, struct definition_string, p);
+	
+    memcpy(&ztrace.trace_name, string_definition->value, 20);
 
-	if (stream->has_timestamp) {
-		set_field_names_print(pos, ITEM_HEADER);
-		if (pos->print_names)
-			fprintf(pos->fp, "timestamp = ");
-		else
-			fprintf(pos->fp, "[");
-		if (opt_clock_cycles) {
-			ctf_print_timestamp(pos->fp, stream, stream->cycles_timestamp);
-		} else {
-			ctf_print_timestamp(pos->fp, stream, stream->real_timestamp);
-		}
-		if (!pos->print_names)
-			fprintf(pos->fp, "]");
+    /*service name*/
+    field = g_ptr_array_index(struct_definition->fields, 1);
+    string_definition = container_of(field, struct definition_string, p);
+    memcpy(&ztrace.service_name, string_definition->value, 20);
 
-		if (pos->print_names)
-			fprintf(pos->fp, ", ");
-		else
-			fprintf(pos->fp, " ");
-	}
-	if (opt_delta_field && stream->has_timestamp) {
-		uint64_t delta, delta_sec, delta_nsec;
-
-		set_field_names_print(pos, ITEM_HEADER);
-		if (pos->print_names)
-			fprintf(pos->fp, "delta = ");
-		else
-			fprintf(pos->fp, "(");
-		if (pos->last_real_timestamp != -1ULL) {
-			delta = stream->real_timestamp - pos->last_real_timestamp;
-			delta_sec = delta / NSEC_PER_SEC;
-			delta_nsec = delta % NSEC_PER_SEC;
-			fprintf(pos->fp, "+%" PRIu64 ".%09" PRIu64,
-				delta_sec, delta_nsec);
-		} else {
-			fprintf(pos->fp, "+?.?????????");
-		}
-		if (!pos->print_names)
-			fprintf(pos->fp, ")");
-
-		if (pos->print_names)
-			fprintf(pos->fp, ", ");
-		else
-			fprintf(pos->fp, " ");
-		pos->last_real_timestamp = stream->real_timestamp;
-		pos->last_cycles_timestamp = stream->cycles_timestamp;
-	}
-
-	if ((opt_trace_field || opt_all_fields) && stream_class->trace->parent.path[0] != '\0') {
-		set_field_names_print(pos, ITEM_HEADER);
-		if (pos->print_names) {
-			fprintf(pos->fp, "trace = ");
-		}
-		fprintf(pos->fp, "%s", stream_class->trace->parent.path);
-		if (pos->print_names)
-			fprintf(pos->fp, ", ");
-		else
-			fprintf(pos->fp, " ");
-	}
-	if ((opt_trace_hostname_field || opt_all_fields || opt_trace_default_fields)
-			&& stream_class->trace->env.hostname[0] != '\0') {
-		set_field_names_print(pos, ITEM_HEADER);
-		if (pos->print_names) {
-			fprintf(pos->fp, "trace:hostname = ");
-		}
-		fprintf(pos->fp, "%s", stream_class->trace->env.hostname);
-		if (pos->print_names)
-			fprintf(pos->fp, ", ");
-		dom_print = 1;
-	}
-	if ((opt_trace_domain_field || opt_all_fields) && stream_class->trace->env.domain[0] != '\0') {
-		set_field_names_print(pos, ITEM_HEADER);
-		if (pos->print_names) {
-			fprintf(pos->fp, "trace:domain = ");
-		}
-		fprintf(pos->fp, "%s", stream_class->trace->env.domain);
-		if (pos->print_names)
-			fprintf(pos->fp, ", ");
-		dom_print = 1;
-	}
-	if ((opt_trace_procname_field || opt_all_fields || opt_trace_default_fields)
-			&& stream_class->trace->env.procname[0] != '\0') {
-		set_field_names_print(pos, ITEM_HEADER);
-		if (pos->print_names) {
-			fprintf(pos->fp, "trace:procname = ");
-		} else if (dom_print) {
-			fprintf(pos->fp, ":");
-		}
-		fprintf(pos->fp, "%s", stream_class->trace->env.procname);
-		if (pos->print_names)
-			fprintf(pos->fp, ", ");
-		dom_print = 1;
-	}
-	if ((opt_trace_vpid_field || opt_all_fields || opt_trace_default_fields)
-			&& stream_class->trace->env.vpid != -1) {
-		set_field_names_print(pos, ITEM_HEADER);
-		if (pos->print_names) {
-			fprintf(pos->fp, "trace:vpid = ");
-		} else if (dom_print) {
-			fprintf(pos->fp, ":");
-		}
-		fprintf(pos->fp, "%d", stream_class->trace->env.vpid);
-		if (pos->print_names)
-			fprintf(pos->fp, ", ");
-		dom_print = 1;
-	}
-	if ((opt_loglevel_field || opt_all_fields) && event_class->loglevel != -1) {
-		set_field_names_print(pos, ITEM_HEADER);
-		if (pos->print_names) {
-			fprintf(pos->fp, "loglevel = ");
-		} else if (dom_print) {
-			fprintf(pos->fp, ":");
-		}
-		fprintf(pos->fp, "%s (%d)",
-			print_loglevel(event_class->loglevel),
-			event_class->loglevel);
-		if (pos->print_names)
-			fprintf(pos->fp, ", ");
-		dom_print = 1;
-	}
-	if ((opt_emf_field || opt_all_fields) && event_class->model_emf_uri) {
-		set_field_names_print(pos, ITEM_HEADER);
-		if (pos->print_names) {
-			fprintf(pos->fp, "model.emf.uri = ");
-		} else if (dom_print) {
-			fprintf(pos->fp, ":");
-		}
-		fprintf(pos->fp, "\"%s\"",
-			g_quark_to_string(event_class->model_emf_uri));
-		if (pos->print_names)
-			fprintf(pos->fp, ", ");
-		dom_print = 1;
-	}
-	if ((opt_callsite_field || opt_all_fields)) {
-		struct ctf_callsite_dups *cs_dups;
-		struct ctf_callsite *callsite;
-
-		cs_dups = ctf_trace_callsite_lookup(stream_class->trace,
-				event_class->name);
-		if (cs_dups) {
-			int i = 0;
-
-			set_field_names_print(pos, ITEM_HEADER);
-			if (pos->print_names) {
-				fprintf(pos->fp, "callsite = ");
-			} else if (dom_print) {
-				fprintf(pos->fp, ":");
-			}
-			fprintf(pos->fp, "[");
-			bt_list_for_each_entry(callsite, &cs_dups->head, node) {
-				if (i != 0)
-					fprintf(pos->fp, ",");
-				if (CTF_CALLSITE_FIELD_IS_SET(callsite, ip)) {
-					fprintf(pos->fp, "%s@0x%" PRIx64 ":%s:%" PRIu64 "",
-						callsite->func, callsite->ip, callsite->file,
-						callsite->line);
-				} else {
-					fprintf(pos->fp, "%s:%s:%" PRIu64 "",
-						callsite->func, callsite->file,
-						callsite->line);
-				}
-				i++;
-			}
-			fprintf(pos->fp, "]");
-			if (pos->print_names)
-				fprintf(pos->fp, ", ");
-			dom_print = 1;
-		}
-	}
-	if (dom_print && !pos->print_names)
-		fprintf(pos->fp, " ");
-	set_field_names_print(pos, ITEM_HEADER);
-	if (pos->print_names)
-		fprintf(pos->fp, "name = ");
-	fprintf(pos->fp, "%s", g_quark_to_string(event_class->name));
-	if (pos->print_names)
-		pos->field_nr++;
-	else
-		fprintf(pos->fp, ":");
-
-	/* print cpuid field from packet context */
-	if (stream->stream_packet_context) {
-		if (pos->field_nr++ != 0)
-			fprintf(pos->fp, ",");
-		set_field_names_print(pos, ITEM_SCOPE);
-		if (pos->print_names)
-			fprintf(pos->fp, " stream.packet.context =");
-		field_nr_saved = pos->field_nr;
-		pos->field_nr = 0;
-		set_field_names_print(pos, ITEM_CONTEXT);
-		ret = generic_rw(ppos, &stream->stream_packet_context->p);
-		if (ret)
-			goto error;
-		pos->field_nr = field_nr_saved;
-	}
-
-	/* Only show the event header in verbose mode */
-	if (babeltrace_verbose && stream->stream_event_header) {
-		if (pos->field_nr++ != 0)
-			fprintf(pos->fp, ",");
-		set_field_names_print(pos, ITEM_SCOPE);
-		if (pos->print_names)
-			fprintf(pos->fp, " stream.event.header =");
-		field_nr_saved = pos->field_nr;
-		pos->field_nr = 0;
-		set_field_names_print(pos, ITEM_CONTEXT);
-		ret = generic_rw(ppos, &stream->stream_event_header->p);
-		if (ret)
-			goto error;
-		pos->field_nr = field_nr_saved;
-	}
-
-	/* print stream-declared event context */
-	if (stream->stream_event_context) {
-		if (pos->field_nr++ != 0)
-			fprintf(pos->fp, ",");
-		set_field_names_print(pos, ITEM_SCOPE);
-		if (pos->print_names)
-			fprintf(pos->fp, " stream.event.context =");
-		field_nr_saved = pos->field_nr;
-		pos->field_nr = 0;
-		set_field_names_print(pos, ITEM_CONTEXT);
-		ret = generic_rw(ppos, &stream->stream_event_context->p);
-		if (ret)
-			goto error;
-		pos->field_nr = field_nr_saved;
-	}
-
-	/* print event-declared event context */
-	if (event->event_context) {
-		if (pos->field_nr++ != 0)
-			fprintf(pos->fp, ",");
-		set_field_names_print(pos, ITEM_SCOPE);
-		if (pos->print_names)
-			fprintf(pos->fp, " event.context =");
-		field_nr_saved = pos->field_nr;
-		pos->field_nr = 0;
-		set_field_names_print(pos, ITEM_CONTEXT);
-		ret = generic_rw(ppos, &event->event_context->p);
-		if (ret)
-			goto error;
-		pos->field_nr = field_nr_saved;
-	}
-
-	/* Read and print event payload */
-	if (event->event_fields) {
-		if (pos->field_nr++ != 0)
-			fprintf(pos->fp, ",");
-		set_field_names_print(pos, ITEM_SCOPE);
-		if (pos->print_names)
-			fprintf(pos->fp, " event.fields =");
-		field_nr_saved = pos->field_nr;
-		pos->field_nr = 0;
-		set_field_names_print(pos, ITEM_PAYLOAD);
-		ret = generic_rw(ppos, &event->event_fields->p);
-		if (ret)
-			goto error;
-		pos->field_nr = field_nr_saved;
-	}
-	/* newline */
-	fprintf(pos->fp, "\n");
+    /*port no*/
+    field = g_ptr_array_index(struct_definition->fields, 2);
+    struct definition_integer * integer_definition =	
+        container_of(field, struct definition_integer, p);
+    ztrace.port = integer_definition->value._unsigned;
+    
+    /*ip*/
+    field = g_ptr_array_index(struct_definition->fields, 3);
+    string_definition = container_of(field, struct definition_string, p);
+    memcpy(&ztrace.ip, string_definition->value, 20);
+	 
+    /*trace id*/ 
+    field = g_ptr_array_index(struct_definition->fields, 4);
+    integer_definition = container_of(field, struct definition_integer, p);
+    ztrace.trace_id = integer_definition->value._unsigned;
+    
+    /*span id*/ 
+    field = g_ptr_array_index(struct_definition->fields, 5);
+    integer_definition = container_of(field, struct definition_integer, p);
+    ztrace.span_id = integer_definition->value._unsigned;
+    
+    /*parent span id*/ 
+    field = g_ptr_array_index(struct_definition->fields, 6);
+    integer_definition = container_of(field, struct definition_integer, p);
+    ztrace.parent_span_id = integer_definition->value._unsigned;
+    
+    /*keyval or timestamp*/
+    if (strcmp(g_quark_to_string(event_class->name), "zipkin:timestamp")) {
+        //fprintf(stderr, "The event is keyval\n");
+        field = g_ptr_array_index(struct_definition->fields, 7);
+        string_definition = container_of(field, struct definition_string, p);
+        memcpy(&ztrace.key, string_definition->value, 20);
+        
+        field = g_ptr_array_index(struct_definition->fields, 8);
+        string_definition = container_of(field, struct definition_string, p);
+        memcpy(&ztrace.val, string_definition->value, 20);
+    
+        ztrace.kind = 1; 
+    } else {
+        //fprintf(stderr, "The event is timestamp\n");
+        field = g_ptr_array_index(struct_definition->fields, 7);
+        string_definition = container_of(field, struct definition_string, p);
+        memcpy(&ztrace.val, string_definition->value, 20);
+    
+        ztrace.kind = 0; 
+    }
+    
+    /* newline */
+	//fprintf(pos->fp, "\n");
+    
+    fwrite(&ztrace, sizeof(struct zipkin_trace), 1, pos->fp);
+    fflush(pos->fp);
 	pos->field_nr = 0;
 
 	return 0;
